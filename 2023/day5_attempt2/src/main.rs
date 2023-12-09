@@ -1,6 +1,8 @@
 use std::{
     collections::{vec_deque, HashMap},
-    fs, vec,
+    fs,
+    io::Split,
+    vec,
 };
 
 fn main() {
@@ -86,13 +88,13 @@ humidity-to-location map:
         });
     println!("Seeds got: {:?}", seed_ranges_new);
 
-    let mut seed_to_soil_range = vec![];
-    let mut soil_to_fert_range = vec![];
-    let mut fert_to_water_range = vec![];
-    let mut water_to_light_range = vec![];
-    let mut light_to_temp_range = vec![];
-    let mut temp_to_hum_range = vec![];
-    let mut hum_to_loc_range = vec![];
+    let mut seed_to_soil_map = vec![];
+    let mut soil_to_fert_map = vec![];
+    let mut fert_to_water_map = vec![];
+    let mut water_to_light_map = vec![];
+    let mut light_to_temp_map = vec![];
+    let mut temp_to_hum_map = vec![];
+    let mut hum_to_loc_map = vec![];
 
     println!("Getting Ranges");
     line.clone()
@@ -109,10 +111,10 @@ humidity-to-location map:
                     map.push(i.to_string().parse::<i64>().unwrap())
                 }
             });
-            seed_to_soil_range.push(map);
+            seed_to_soil_map.push(map);
         });
 
-    println!("Seed to Soil Ranges: {:?}", seed_to_soil_range);
+    println!("Seed to Soil Ranges: {:?}", seed_to_soil_map);
 
     line.clone()
         .nth(2)
@@ -128,107 +130,9 @@ humidity-to-location map:
                     map.push(i.to_string().parse::<i64>().unwrap())
                 }
             });
-            soil_to_fert_range.push(map);
+            soil_to_fert_map.push(map);
         });
 
-    let mut new_soil_ranges = vec![];
-    let mut n: Vec<_> = seed_ranges_new
-        .iter_mut()
-        .map(|range| {
-            let mut ranges = vec![];
-
-            let seed_start = range.get(0).unwrap();
-            let seed_end = range.get(1).unwrap();
-
-            seed_to_soil_range.iter().for_each(|rng2| {
-                let rng2_len = rng2.get(2).unwrap();
-
-                let source_start = rng2.get(1).unwrap();
-                println!("Source Start: {:?}", source_start);
-                let source_end = source_start + rng2_len;
-
-                let dest_start = rng2.get(0).unwrap();
-                println!("Dest Start: {:?}", dest_start);
-                let dest_end = dest_start + rng2_len;
-
-                let d_seed_start_source = seed_start - source_start;
-                let d_seed_end_source = source_end - seed_end;
-
-                println!("\n\nRanges to Push");
-                if seed_start >= source_start {
-                    println!(
-                        "Seeds Start: {:?} is greater than source start: {:?}",
-                        seed_start, source_start
-                    );
-                    if seed_end <= &source_end.to_owned() {
-                        let dest_start_new = dest_start + d_seed_start_source;
-                        let dest_end_new = dest_end - d_seed_end_source;
-
-                        let new_soil_range = vec![dest_start_new, dest_end_new];
-
-                        println!("Adding new matching soil ranges, {:?}", new_soil_range);
-                        ranges.push(new_soil_range);
-                    } else {
-                        println!("The seed end is greater than the source end")
-                    }
-                } else {
-                    println!("Seed range does not exist in this range!\n\n")
-                }
-            });
-            ranges.iter().for_each(|r| {
-                new_soil_ranges.push(r.clone());
-            });
-            return ranges;
-        })
-        .collect();
-    println!("Soil Vecs: {:?}", n);
-
-    let mut new_fert_ranges = vec![];
-
-    new_soil_ranges.iter_mut().for_each(|range| {
-        let mut ranges = vec![];
-
-        let seed_start = range.get(0).unwrap();
-        let seed_end = range.get(1).unwrap();
-
-        soil_to_fert_range.iter().for_each(|rng2| {
-            let rng2_len = rng2.get(2).unwrap();
-
-            let source_start = rng2.get(1).unwrap();
-            println!("Source Start: {:?}", source_start);
-            let source_end = source_start + rng2_len;
-
-            let dest_start = rng2.get(0).unwrap();
-            println!("Dest Start: {:?}", dest_start);
-            let dest_end = dest_start + rng2_len;
-
-            let d_seed_start_source = seed_start - source_start;
-            let d_seed_end_source = source_end - seed_end;
-
-            println!("\n\nRanges to Push");
-            if seed_start >= source_start {
-                println!(
-                    "Seeds Start: {:?} is greater than source start: {:?}",
-                    seed_start, source_start
-                );
-                if seed_end <= &source_end.to_owned() {
-                    let dest_start_new = dest_start + d_seed_start_source;
-                    let dest_end_new = dest_end - d_seed_end_source;
-
-                    let new_soil_range = vec![dest_start_new, dest_end_new];
-
-                    println!("Adding new matching soil ranges, {:?}", new_soil_range);
-                    ranges.push(new_soil_range);
-                } else {
-                    println!("The seed end is greater than the source end")
-                }
-            } else {
-                println!("Seed range does not exist in this range!\n\n")
-            }
-        });
-        new_fert_ranges.push(ranges);
-    });
-    println!("Fert Vecs: {:?}", new_fert_ranges);
     line.clone()
         .nth(3)
         .unwrap()
@@ -243,7 +147,7 @@ humidity-to-location map:
                     map.push(i.to_string().parse::<i64>().unwrap())
                 }
             });
-            fert_to_water_range.push(map);
+            fert_to_water_map.push(map);
         });
     line.clone()
         .nth(4)
@@ -259,7 +163,7 @@ humidity-to-location map:
                     map.push(i.to_string().parse::<i64>().unwrap())
                 }
             });
-            water_to_light_range.push(map);
+            water_to_light_map.push(map);
         });
     line.clone()
         .nth(5)
@@ -275,7 +179,7 @@ humidity-to-location map:
                     map.push(i.to_string().parse::<i64>().unwrap())
                 }
             });
-            light_to_temp_range.push(map);
+            light_to_temp_map.push(map);
         });
     line.clone()
         .nth(6)
@@ -291,7 +195,7 @@ humidity-to-location map:
                     map.push(i.to_string().parse::<i64>().unwrap())
                 }
             });
-            temp_to_hum_range.push(map);
+            temp_to_hum_map.push(map);
         });
     line.clone()
         .nth(7)
@@ -307,7 +211,122 @@ humidity-to-location map:
                     map.push(i.to_string().parse::<i64>().unwrap())
                 }
             });
-            hum_to_loc_range.push(map);
+            hum_to_loc_map.push(map);
         });
+
+    let mut soil_ranges: Vec<Vec<i64>> = get_mapped_ranges(seed_ranges_new, seed_to_soil_map);
+    println!("\n\nSoil Ranges: {:?}", soil_ranges);
+    let mut fert_ranges: Vec<Vec<i64>> = get_mapped_ranges(soil_ranges, soil_to_fert_map);
+    println!("\n\nFert Ranges: {:?}", fert_ranges);
+    let mut water_ranges: Vec<Vec<i64>> = get_mapped_ranges(fert_ranges, fert_to_water_map);
+    println!("\n\nWater Ranges: {:?}", water_ranges);
+
+    fn get_mapped_ranges(mut ranges: Vec<Vec<i64>>, map: Vec<Vec<i64>>) -> Vec<Vec<i64>> {
+        println!("\n\nRanges: {:?}\nMap: {:?}", ranges, map);
+        ranges
+            .iter_mut()
+            .flat_map(|range| {
+                let mut ranges = vec![];
+
+                let mut range_start = range.get(0).unwrap();
+                let range_end = range.get(1).unwrap();
+                println!(
+                    "\nRange Start: {:?}\nRange End: {:?}",
+                    range_start, range_end
+                );
+                let map_source_min = map
+                    .iter()
+                    .map(|item| {
+                        let source = item.get(1).unwrap().to_owned();
+                        println!("Sources Here: {:?}", source);
+                        source
+                    })
+                    .collect::<Vec<i64>>()
+                    .into_iter()
+                    .min()
+                    .unwrap();
+
+                let map_source_max = map
+                    .iter()
+                    .map(|item| {
+                        let source = item.get(1).unwrap().to_owned();
+                        let rng = item.get(2).unwrap().to_owned();
+                        let src_end = source + rng;
+                        src_end
+                    })
+                    .collect::<Vec<i64>>()
+                    .into_iter()
+                    .max()
+                    .unwrap();
+
+                println!(
+                    "Map Source Min: {:?}\nMap Source Max: {:?}",
+                    map_source_min, map_source_max
+                );
+
+                if range_start < &map_source_min {
+                    // Make a new bucket for the unmapped ranges
+                    let start = range_start.to_owned();
+                    let end = map_source_min.to_owned() - 1;
+                    let new_vec = vec![start, end];
+                    println!("New Vec: {:?}", new_vec);
+                    ranges.push(new_vec);
+
+                    range_start = &map_source_min;
+                };
+
+                if range_start > &map_source_max {
+                    let start = range_start.to_owned();
+                    let end = range_end.to_owned();
+                    let new_vec = vec![start, end];
+                    println!("New Vec: {:?}", new_vec);
+                    ranges.push(new_vec);
+                }
+
+                map.iter().for_each(|rng2| {
+                    let rng2_len = rng2.get(2).unwrap();
+
+                    let source_start = rng2.get(1).unwrap();
+                    let source_end = source_start + rng2_len;
+                    println!(
+                        "Source Start: {:?}\nSource End: {:?}",
+                        source_start, source_end
+                    );
+
+                    let dest_start = rng2.get(0).unwrap();
+                    let dest_end = dest_start + rng2_len;
+                    println!("Dest Start: {:?}\nDest End: {:?}", dest_start, dest_end);
+
+                    let d_seed_start_source = range_start - source_start;
+                    let d_seed_end_source = source_end - range_end;
+
+                    // Need to make new buckets when source end ends inside a range and remainder
+                    // of source is outside of range. Need to split and check the remainder range
+                    // against all of the maps to validate nothing remains
+                    println!("Ranges to Push");
+                    if range_start >= source_start {
+                        println!(
+                            "Input Start: {:?} is greater than source start: {:?}",
+                            range_start, source_start
+                        );
+                        if range_end <= &source_end.to_owned() {
+                            let dest_start_new = dest_start + d_seed_start_source;
+                            let dest_end_new = dest_end - d_seed_end_source;
+
+                            let new_soil_range = vec![dest_start_new, dest_end_new];
+
+                            println!("Adding new matching Dest ranges, {:?}", new_soil_range);
+                            ranges.push(new_soil_range);
+                        } else {
+                            println!("The Input end is greater than the source end")
+                        }
+                    } else {
+                        println!("Input range does not exist in this Source range!")
+                    }
+                });
+                ranges.into_iter()
+            })
+            .collect()
+    }
     println!("Ranges Got!");
 }
